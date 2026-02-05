@@ -12,7 +12,7 @@ from perception.vision import VisionAnalyzer
 
 class BrowserManager:
     def __init__(self):
-        from core.llm import get_vision_model
+        from core.llms import get_vision_model
         
         self.driver = Driver(
             browser="chrome",
