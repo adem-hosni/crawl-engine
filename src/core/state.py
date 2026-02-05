@@ -12,6 +12,8 @@ class AgentState(TypedDict):
     messages: Annotated[list, add_messages]
 
     user_goal: str
+    
+    summary: str
 
     current_url: str
     clean_dom: str
