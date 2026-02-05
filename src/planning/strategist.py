@@ -6,8 +6,9 @@ from langchain_core.messages.base import BaseMessage
 
 from core.state import AgentState
 from core.prompts import SYSTEM_PROMPT
-from core.llm import get_agent_llm
+from core.llms import get_agent_llm
 
+from config.logger import get_logger
 
 from execution.tools import TOOLS
 
@@ -18,6 +19,7 @@ class AgentDecision(BaseModel):
 
 
 llm = get_agent_llm(TOOLS)
+logger = get_logger("planning.strategist")
 
 
 def strategist_node(state: AgentState) -> Dict[Any, Any]:
@@ -63,6 +65,7 @@ Try to automate user tasks
                 HumanMessage(content=user_message),
             ]
         )
+        logger.info(response.content.strip())
         # This data will be passed to the "Router" and "Executor" nodes
         return {
             "messages": [response],
