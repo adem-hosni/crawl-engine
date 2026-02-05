@@ -11,6 +11,8 @@ from perception.dom_cleaner import DOMCleaner
 
 from bs4 import BeautifulSoup, Comment
 
+from selenium.common.exceptions import WebDriverException
+
 
 # --- HELPERS ---
 def _resolve_selector(element_id: int) -> str:
@@ -61,7 +63,7 @@ def click_element(element_id: int):
         return f"Action on [{element_id}]: {result}"
 
     except Exception as e:
-        return f"Error clicking element [{element_id}]: {str(e)[:60]}"
+        return f"Error clicking element [{element_id}]: {str(e):.90}"
 
 
 @tool(
@@ -78,7 +80,7 @@ def insert_text(element_id: int, text: str):
         return f"Action on [{element_id}]: {result}"
 
     except Exception as e:
-        return f"Error typing into element [{element_id}]: {str(e)[:60]}"
+        return f"Error typing into element [{element_id}]: {str(e):.90}"
 
 
 @tool(
@@ -92,7 +94,7 @@ def navigate_url(url: str):
         browser.navigate_to(url)
         return f"Navigated to {url}"
     except Exception as e:
-        return f"Error navigating to {url}: {str(e)[:60]}"
+        return f"Error navigating to {url}: {str(e):.90}"
 
 
 @tool
@@ -116,7 +118,7 @@ def scroll_element(element_id: int):
         return f"Scrolled to element [{element_id}]"
 
     except Exception as e:
-        return f"Error scrolling to [{element_id}]: {str(e)[:60]}"
+        return f"Error scrolling to [{element_id}]: {str(e):.90}"
 
 
 # @tool(description="Read page Interactive elements")
@@ -127,7 +129,7 @@ def read_interactive_elements() -> str:
     try:
         return browser.get_compressed_dom()
     except Exception as err:
-        return f"Error while reading page interactive elements: {str(err)[:60]}"
+        return f"Error while reading page interactive elements: {str(err):.90}"
 
 
 @tool(
@@ -225,7 +227,7 @@ def execute_javascript(code: str) -> str:
             return f"Result: {str(result)}"
         return "JavaScript executed successfully (no return value)."
     except Exception as e:
-        return f"System Error executing JS: {str(e)[:60]}"
+        return f"System Error executing JS: {str(e):.90}"
 
 
 @tool(parse_docstring=True)
@@ -274,6 +276,9 @@ def read_page_content():
             "novalidate",
             "dir",
             "role",
+            "xmlns",
+            "fill",
+            "d",
         }
 
         def remove_attrs(body):
@@ -287,19 +292,21 @@ def read_page_content():
             return body
 
         source = str(remove_attrs(soup.body)).replace("\n", "")
-        while (
-            source.count("  ") > 0
-            or source.count("</div></div>") > 0
-            or source.count("<span><span>") > 0
-            or source.count("</span></span>") > 0
-        ):
-            source = (
-                source.replace("  ", " ")
-                .replace("</div></div>", "</div>")
-                .replace("<span><span>", "<span>")
-                .replace("</span></span>", "</span>")
-            )
 
+        chunks = {
+            "  ": " ",
+            "</div></div>": "</div>",
+            "<div><div>": "<div>",
+            "<div></div>": "",
+            "<span><span>": "<span>",
+            "</span></span>": "</span>",
+            "<span></span>": "<span>",
+        }
+
+        while any([source.count(chunk) > 0 for chunk in chunks.keys()]):
+            for k, v in chunks.items():
+                source = source.replace(k, v)
+            
         # cleaner = DOMCleaner()
 
         print(f"Source size: {len(source)} bytes")
@@ -310,13 +317,38 @@ def read_page_content():
         return f"Error while reading page source code: {str(err)[:200]}"
 
 
+@tool
+def refresh_page(wait_time: int = 3):
+    """
+    Refreshes the current web page.
+    Use this when the page seems stuck, elements are not loading,
+    or you need to reset the view to the initial state.
+
+    Args:
+        wait_time: Time in seconds to wait after refreshing (default is 3).
+    """
+    try:
+        print(f"🔄 Refreshing page...")
+        driver.refresh()
+
+        time.sleep(wait_time)
+
+        return f"Successfully refreshed the page and waited {wait_time} seconds."
+
+    except WebDriverException as e:
+        return f"Error: Failed to refresh the page. Details: {str(e)}"
+    except Exception as e:
+        return f"Error: An unexpected error occurred during refresh: {str(e)}"
+
+
 TOOLS = [
-    # click_element,
+    click_element,
     insert_text,
     navigate_url,
     execute_javascript,
     read_page_content,
     ask_user_for_help,
     check_saved_knowledge,
-    # analyze_screen, # Don't forget to expose this if you want the agent to use Vision
+    refresh_page,
+    # analyze_screen,
 ]
