@@ -19,7 +19,7 @@ def main():
     app = build_graph()
 
     # 3. Get User Mission
-    user_goal = "Login to my instagram, email: hyper_x86@proton.me password: XXXXX"
+    user_goal = "Go to wikipedia.org, type 'Klay BBJ' into the search bar, and click the search button. Return the URL you land on."
 
     # 4. Initialize State
     initial_state = {
@@ -61,11 +61,6 @@ def main():
                     tool_msgs = values["messages"]
                     for tm in tool_msgs:
                         print(f"🛠️ TOOL OUTPUT: {tm.content}")
-
-                # If it's Perception
-                elif node_name == "perception":
-                    url = values.get("current_url", "Unknown")
-                    print(f"👀 PERCEPTION: Scanned {url}")
 
     except KeyboardInterrupt:
         print("\n🛑 User stopped the agent.")
