@@ -4,23 +4,30 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, ElementNotInteractableException
+from selenium.common.exceptions import (
+    TimeoutException,
+    ElementClickInterceptedException,
+    ElementNotInteractableException,
+)
 from bs4 import BeautifulSoup
 
 # Assuming this import remains the same
 from perception.vision import VisionAnalyzer
 
+
 class BrowserManager:
     def __init__(self):
         from core.llms import get_vision_model
-        
+
         self.driver = Driver(
             browser="chrome",
-            uc=True, 
+            uc=True,
             headless=False,
-            binary_location=r"C:\Program Files (x86)\chrome\chrome.exe"
+            binary_location=r"C:\Program Files (x86)\chrome\chrome.exe",
+            locale_code="en",
+            
         )
-        
+
         self.vision = VisionAnalyzer(get_vision_model())
         self.wait = WebDriverWait(self.driver, 1)
 
@@ -29,7 +36,7 @@ class BrowserManager:
         try:
             self.driver.get(url)
             # Optional: Short sleep to let animations settle
-            time.sleep(2) 
+            time.sleep(2)
         except Exception as e:
             print(f"Navigation error: {e}")
 
@@ -39,7 +46,7 @@ class BrowserManager:
             "Describe the current page layout, focusing on interactive elements "
             "(buttons, inputs, menus). If there are errors or popups, describe them."
         )
-        
+
         print(f"Vision: Analyzing screen for '{prompt}'...")
         return self.vision.analyze_page(self.driver, prompt)
 
@@ -52,19 +59,25 @@ class BrowserManager:
         """
         try:
             element = self._select_element(selector, by_method)
-            
+
             try:
-                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
+                self.driver.execute_script(
+                    "arguments[0].scrollIntoView({block: 'center'});", element
+                )
                 element.click()
                 return "Clicked (Standard)"
-            
+
             except (ElementClickInterceptedException, ElementNotInteractableException):
-                print(f"Standard click failed for {selector}. Attempting JS Force Click...")
+                print(
+                    f"Standard click failed for {selector}. Attempting JS Force Click..."
+                )
                 self.driver.execute_script("arguments[0].click();", element)
                 return "Clicked (Forced via JS)"
 
         except TimeoutException:
-            return f"Error: Element {selector} not found or not clickable within timeout."
+            return (
+                f"Error: Element {selector} not found or not clickable within timeout."
+            )
         except Exception as err:
             return f"Error clicking element {selector}: {str(err)}"
 
@@ -72,14 +85,16 @@ class BrowserManager:
         """Inserts text safely by ensuring the field is clear and active."""
         try:
             element = self._select_element(selector, by_method)
-            
-            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
-            
+
+            self.driver.execute_script(
+                "arguments[0].scrollIntoView({block: 'center'});", element
+            )
+
             try:
                 element.click()
             except:
-                pass # If click fails, we still try to type
-            
+                pass  # If click fails, we still try to type
+
             # Clear and Type
             element.clear()
             element.send_keys(text)
@@ -98,14 +113,18 @@ class BrowserManager:
 
         relevant_elements = []
         # Added 'textarea' and 'select' to your list for better form coverage
-        for tag in soup.find_all(["a", "button", "input", "textarea", "select", "h1", "h2", "p"]):
+        for tag in soup.find_all(
+            ["a", "button", "input", "textarea", "select", "h1", "h2", "p"]
+        ):
             text = tag.get_text(strip=True)
             # Only include elements that have text OR are inputs
             if text or tag.name in ["input", "textarea", "select", "button"]:
-                info = (f"Tag: <{tag.name}> | "
-                        f"Text: {text[:50]} | "
-                        f"ID: {tag.get('id', 'N/A')} | "
-                        f"Class: {' '.join(tag.get('class', []))}")
+                info = (
+                    f"Tag: <{tag.name}> | "
+                    f"Text: {text[:50]} | "
+                    f"ID: {tag.get('id', 'N/A')} | "
+                    f"Class: {' '.join(tag.get('class', []))}"
+                )
                 relevant_elements.append(info)
 
         return "\n".join(relevant_elements[:150])
@@ -116,10 +135,11 @@ class BrowserManager:
         This prevents 'ElementNotFound' errors when the page is slow.
         """
         strategy = getattr(By, by_method.upper(), By.CSS_SELECTOR)
-        
+
         # Wait up to 10 seconds for the element to exist and be visible
         element = self.wait.until(EC.presence_of_element_located((strategy, selector)))
         return element
+
 
 # Usage
 browser = BrowserManager()
