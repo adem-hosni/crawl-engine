@@ -1,5 +1,4 @@
-from typing import Literal, Optional, List, Dict, Any
-from pydantic import BaseModel, Field
+from typing import List, Dict, Any
 
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_core.messages.base import BaseMessage
@@ -13,11 +12,6 @@ from config.logger import get_logger
 from execution.tools import TOOLS
 
 
-class AgentDecision(BaseModel):
-    action: str = Field(..., description="What you are doing and why")
-    summary: str = Field(..., description="Action summary")
-
-
 llm = get_agent_llm(TOOLS)
 logger = get_logger("planning.strategist")
 
@@ -28,17 +22,8 @@ def strategist_node(state: AgentState) -> Dict[Any, Any]:
     Args:
         state: The current AgentState (dict)
     """
-    user_goal = state["user_goal"]
-    clean_dom = state.get("clean_dom", "No interactive elements.")
-    current_url = state.get("current_url", "Unknown")
     messages: List[BaseMessage] = state.get("messages", [])
     previous_actions = state.get("previous_actions", [])
-
-    evaluator_feedback = "No feedback yet."
-    if messages and isinstance(messages[-1], SystemMessage):
-        evaluator_feedback = messages[-1].content
-
-    current_context = state.get("clean_dom", "No DOM detected.")
 
     # We grab the last few logs to give the agent "short-term memory"
     # recent_history = "\n - ".join(previous_actions[-10:])
@@ -51,12 +36,8 @@ def strategist_node(state: AgentState) -> Dict[Any, Any]:
 ## Previous Actions:
 {recent_history}
 
-## Current Browser STATE (Interactive Elements):
-{current_context}
-
 Try to automate user tasks
 """.strip()
-
 
     try:
         response = llm.invoke(
