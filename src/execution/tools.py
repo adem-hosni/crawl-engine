@@ -230,12 +230,12 @@ def execute_javascript(code: str) -> str:
         return f"System Error executing JS: {str(e):.90}"
 
 
-@tool(parse_docstring=True)
-def read_page_content():
+@tool(
+    description="Scans the current page and returns a simplified, clean HTML representation. You can use this when you stuck with interactive elements"
+)
+def read_page_sourcecode():
     """
     Scans the current page and returns a simplified, clean HTML representation.
-    CRITICAL: This tool assigns numeric IDs (e.g., [12]) to interactive elements.
-    You MUST use these IDs with the click_element and insert_text tools.
     """
     try:
         soup = BeautifulSoup(driver.page_source, "html.parser")
@@ -306,7 +306,7 @@ def read_page_content():
         while any([source.count(chunk) > 0 for chunk in chunks.keys()]):
             for k, v in chunks.items():
                 source = source.replace(k, v)
-            
+
         # cleaner = DOMCleaner()
 
         print(f"Source size: {len(source)} bytes")
@@ -346,7 +346,7 @@ TOOLS = [
     insert_text,
     navigate_url,
     execute_javascript,
-    read_page_content,
+    read_page_sourcecode,
     ask_user_for_help,
     check_saved_knowledge,
     refresh_page,
