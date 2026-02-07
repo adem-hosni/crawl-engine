@@ -23,7 +23,4 @@ class AgentState(TypedDict):
     todo_list: List[str]
     previous_actions: List[str]
 
-    # --- Control
-    last_action: Dict
-    retry_count: int
-    status: str
+    scratchpad: List[str]

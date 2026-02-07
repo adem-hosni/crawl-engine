@@ -5,14 +5,14 @@ from langchain_core.messages.base import BaseMessage
 
 from core.state import AgentState
 from core.prompts import SYSTEM_PROMPT
-from core.llms import get_agent_llm
+from core.llms import get_agent_llm, get_summarization_llm
 
 from config.logger import get_logger
 
-from execution.tools import TOOLS
+from execution.tools import get_agent_tools
 
 
-llm = get_agent_llm(TOOLS)
+llm = get_agent_llm(get_agent_tools(get_summarization_llm()))
 logger = get_logger("planning.strategist")
 
 
@@ -45,6 +45,8 @@ Try to automate user tasks
                 SystemMessage(content=SYSTEM_PROMPT),
                 HumanMessage(content=user_message),
             ]
+            if not state["messages"]
+            else state["messages"] + [HumanMessage(content="What you need to do next?")]
         )
         logger.info(response.content.strip())
         # This data will be passed to the "Router" and "Executor" nodes

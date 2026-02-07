@@ -7,7 +7,6 @@ from core.prompts import SUMMARIZATION_SYSTEMPROMPT
 
 from perception.dom_cleaner import DOMCleaner
 
-from execution.tools import TOOLS
 from execution.browser import driver
 from execution.context import BrowserContext
 
@@ -32,9 +31,6 @@ def perception_node(state: AgentState):
     }
 
 
-executor_node = ToolNode(TOOLS)
-
-
 def router_node(state: AgentState):
     """Step 4: Route (Traffic Control)"""
     messages = state["messages"]
@@ -53,31 +49,34 @@ def router_node(state: AgentState):
 
 summarization_llm = get_summarization_llm()
 
+
 def summarization_node(state: AgentState):
     """Summarizes older messages and removes them from history."""
     current_summary = state.get("summary", "No previous summary exists.")
     messages = state["messages"]
-    
+
     # Keep the last 5 messages (Active Context) so Perception can see the Executor's activity
     # Summarizer everything else
     if len(messages) <= 7:
         return {"messages": []}
-    
+
     messages_to_summarize = messages[:-7]
-    
+
     prompt = f"""
 Current summary: {current_summary}
 New conversation lines: {"\n\n".join([message.content for message in messages_to_summarize])}
 """.strip()
-    
-    response = summarization_llm.invoke([
-        SystemMessage(content=SUMMARIZATION_SYSTEMPROMPT),
-        HumanMessage(content=prompt)
-    ])
-    
+
+    response = summarization_llm.invoke(
+        [
+            SystemMessage(content=SUMMARIZATION_SYSTEMPROMPT),
+            HumanMessage(content=prompt),
+        ]
+    )
+
     return {
         "summary": response.content,
-        "messages": [RemoveMessage(id=m.id) for m in messages_to_summarize]
+        "messages": [RemoveMessage(id=m.id) for m in messages_to_summarize],
     }
 
 
