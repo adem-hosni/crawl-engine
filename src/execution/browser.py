@@ -1,4 +1,5 @@
 import time
+
 from seleniumbase import Driver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -14,10 +15,16 @@ from bs4 import BeautifulSoup
 # Assuming this import remains the same
 from perception.vision import VisionAnalyzer
 
+from core.llms import vision_model
+
+from config.logger import get_logger
+
+
+logger = get_logger("execution.browser")
+
 
 class BrowserManager:
-    def __init__(self):
-        from core.llms import get_vision_model
+    def __init__(self, vision_model):
 
         self.driver = Driver(
             browser="chrome",
@@ -25,10 +32,9 @@ class BrowserManager:
             headless=False,
             binary_location=r"C:\Program Files (x86)\chrome\chrome.exe",
             locale_code="en",
-            
         )
 
-        self.vision = VisionAnalyzer(get_vision_model())
+        self.vision = VisionAnalyzer(vision_model)
         self.wait = WebDriverWait(self.driver, 1)
 
     def navigate_to(self, url: str) -> None:
@@ -38,7 +44,7 @@ class BrowserManager:
             # Optional: Short sleep to let animations settle
             time.sleep(2)
         except Exception as e:
-            print(f"Navigation error: {e}")
+            logger.error(f"Navigation error: {e}")
 
     def get_visual_context(self, query: str = None) -> str:
         """Analyzes the current screen visually."""
@@ -47,7 +53,7 @@ class BrowserManager:
             "(buttons, inputs, menus). If there are errors or popups, describe them."
         )
 
-        print(f"Vision: Analyzing screen for '{prompt}'...")
+        logger.info(f"Vision: Analyzing screen for '{prompt}'...")
         return self.vision.analyze_page(self.driver, prompt)
 
     def click_element(self, selector: str, by_method: str = "id") -> str:
@@ -68,7 +74,7 @@ class BrowserManager:
                 return "Clicked (Standard)"
 
             except (ElementClickInterceptedException, ElementNotInteractableException):
-                print(
+                logger.error(
                     f"Standard click failed for {selector}. Attempting JS Force Click..."
                 )
                 self.driver.execute_script("arguments[0].click();", element)
@@ -141,6 +147,6 @@ class BrowserManager:
         return element
 
 
-# Usage
-browser = BrowserManager()
+# Module-level browser + driver for convenience (created with configured vision model)
+browser = BrowserManager(vision_model)
 driver = browser.driver

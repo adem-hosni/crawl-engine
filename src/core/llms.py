@@ -1,14 +1,13 @@
 import os
 from dotenv import load_dotenv
-from typing import List, Callable, Any
 
 from core.callbacks import SummaryCaptureHandler
 
 from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic  # Optional: if you want Claude later
+from langchain_anthropic import ChatAnthropic
 
 
-def get_agent_llm(tools: List[Callable[..., Any]]):
+def _get_agent_llm():
     """
     Returns the configured LLM for the Agent.
     """
@@ -26,9 +25,10 @@ def get_agent_llm(tools: List[Callable[..., Any]]):
         openai_api_key=os.getenv("OPENROUTER_API_KEY"),
         openai_api_base="https://openrouter.ai/api/v1",
         streaming=True,
-    ).bind_tools(tools)
+    )
 
-def get_summarization_llm():
+
+def _get_summarization_llm():
     """
     Returns an llm for the summarization
     """
@@ -46,11 +46,11 @@ def get_summarization_llm():
         openai_api_key=os.getenv("OPENROUTER_API_KEY"),
         openai_api_base="https://openrouter.ai/api/v1",
         streaming=True,
-        callbacks=[SummaryCaptureHandler()]
+        callbacks=[SummaryCaptureHandler()],
     )
 
 
-def get_vision_model():
+def _get_vision_model():
     """
     Returns the configured LLM for the Agent.
     """
@@ -67,3 +67,8 @@ def get_vision_model():
         max_tokens=1000,
         streaming=True,
     )
+
+
+agent_llm = _get_agent_llm()
+summarization_llm = _get_summarization_llm()
+vision_model = _get_vision_model()

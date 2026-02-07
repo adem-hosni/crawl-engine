@@ -2,7 +2,7 @@ from langgraph.prebuilt import ToolNode
 from langchain_core.messages import SystemMessage, HumanMessage, RemoveMessage
 
 from core.state import AgentState
-from core.llms import get_summarization_llm
+from core.llms import _get_summarization_llm
 from core.prompts import SUMMARIZATION_SYSTEMPROMPT
 
 from perception.dom_cleaner import DOMCleaner
@@ -47,7 +47,7 @@ def router_node(state: AgentState):
     return "end"
 
 
-summarization_llm = get_summarization_llm()
+summarization_llm = _get_summarization_llm()
 
 
 def summarization_node(state: AgentState):

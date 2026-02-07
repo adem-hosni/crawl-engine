@@ -3,17 +3,9 @@
 import os
 import json
 import time
-from typing import List, Callable, Any
 
-from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
 
-from deepagents.backends.state import StateBackend
-from deepagents.middleware.memory import MemoryMiddleware
-from deepagents.middleware.patch_tool_calls import PatchToolCallsMiddleware
-from deepagents.middleware.summarization import SummarizationMiddleware
-from deepagents.middleware.filesystem import FilesystemMiddleware
-from langchain.agents.middleware import TodoListMiddleware
 
 from execution.browser import browser, driver
 from execution.context import BrowserContext
@@ -22,6 +14,8 @@ from perception.dom_cleaner import DOMCleaner
 from bs4 import BeautifulSoup, Comment
 
 from selenium.common.exceptions import WebDriverException
+
+# (browser and driver are provided by execution.browser module)
 
 
 # --- HELPERS ---
@@ -355,30 +349,3 @@ def refresh_page(wait_time: int = 3):
         return f"Error: Failed to refresh the page. Details: {str(e)}"
     except Exception as e:
         return f"Error: An unexpected error occurred during refresh: {str(e)}"
-
-
-def get_agent_tools(llm: ChatOpenAI) -> List[Callable[..., Any]]:
-    backend = lambda runtime: StateBackend(runtime)
-    AGENT_TOOLS = [
-        # click_element,
-        # insert_text,
-        navigate_url,
-        execute_javascript,
-        read_page_sourcecode,
-        ask_user_for_help,
-        check_saved_knowledge,
-        refresh_page,
-        # analyze_screen,
-    ]
-
-    return AGENT_TOOLS + [
-        tool
-        for middleware in [
-            TodoListMiddleware(),
-            PatchToolCallsMiddleware(),
-            SummarizationMiddleware(model=llm, backend=backend),
-            FilesystemMiddleware(backend=backend),
-            # MemoryMiddleware(backend=backend),
-        ]
-        for tool in getattr(middleware, "tools", [])
-    ]

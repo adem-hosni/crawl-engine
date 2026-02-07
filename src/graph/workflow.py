@@ -1,7 +1,8 @@
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
+from langgraph.checkpoint.memory import MemorySaver, InMemorySaver
 
-from core.llms import get_summarization_llm
+from core.llms import agent_llm as llm, summarization_llm
 from core.state import AgentState
 from graph.nodes import (
     perception_node,
@@ -9,19 +10,20 @@ from graph.nodes import (
     should_summarize_route,
     router_node,
 )
+from graph.toolnode import agent_tools
 
-from execution.tools import get_agent_tools
-from planning.strategist import strategist_node
+from planning.strategist import get_strategist_node
 
 
 def build_graph():
-    toolnode = ToolNode(get_agent_tools(get_summarization_llm()))
+    tools = agent_tools(llm=llm, summarization_llm=summarization_llm)
+    agent_llm = llm.bind_tools(tools)
 
     workflow = StateGraph(AgentState)
 
     workflow.add_node("perception", perception_node)
-    workflow.add_node("strategist", strategist_node)
-    workflow.add_node("executor", toolnode)
+    workflow.add_node("strategist", get_strategist_node(agent_llm))
+    workflow.add_node("executor", ToolNode(tools))
     # workflow.add_node("summarizer", summarization_node)
 
     workflow.set_entry_point("perception")
@@ -38,4 +40,4 @@ def build_graph():
 
     workflow.add_edge("executor", "perception")  # Loop back
 
-    return workflow.compile()
+    return workflow.compile(checkpointer=InMemorySaver())
