@@ -40,4 +40,4 @@ def build_graph():
 
     workflow.add_edge("executor", "perception")  # Loop back
 
-    return workflow.compile(checkpointer=InMemorySaver())
+    return workflow.compile()

@@ -12,3 +12,4 @@ wheels/
 .env
 downloaded_files/
 logs/
+.langgraph_api/

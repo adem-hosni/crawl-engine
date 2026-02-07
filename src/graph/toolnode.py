@@ -49,14 +49,14 @@ def get_agent_tools(
         tool
         for middleware in [
             TodoListMiddleware(),
-            PatchToolCallsMiddleware(),
-            SummarizationMiddleware(model=summarization_llm, backend=backend),
             FilesystemMiddleware(backend=backend),
             SubAgentMiddleware(
                 default_model=llm,
                 default_tools=AGENT_TOOLS,
                 subagents=subagents,
             ),
+            PatchToolCallsMiddleware(),
+            SummarizationMiddleware(model=summarization_llm, backend=backend),
             # MemoryMiddleware(backend=backend),
         ]
         for tool in getattr(middleware, "tools", [])
